@@ -6,8 +6,7 @@ function isShoppingSite() {
 
   const shoppingKeywords = [
     "add to cart", "add to bag", "add to basket",
-    "buy now", "checkout", "free shipping", "in stock",
-    "cart", "bag", "basket"
+    "buy now", "checkout", "free shipping", "in stock"
   ];
   const keywordHit = shoppingKeywords.some(k => bodyText.includes(k));
 
@@ -68,7 +67,7 @@ const weatherMode = {
   5: "waterdrop",
   6: "blank",
   7: "blank",
-  8: "waterdrop",
+  8: "blank",
   9: "lightning",
   10: "lightning",
   11: "lightning",
@@ -115,7 +114,7 @@ function showEMS(filename) {
 --------------------------------------------------- */
 function showBubble(index) {
 
-  if (index < 1) return;           /* ###changed here — prevent invalid bubble for e0 */
+  if (index < 1) return;    
 
   const file = tbImages[index - 1];
   if (!file) return;
@@ -202,16 +201,19 @@ function showWeather(mode, clickY = null, clickX = null) {
   /* ----------------------------------------------
    WATERDROP — centered under cloud guy ###changed here
 ---------------------------------------------- */
+
 if (mode === "waterdrop") {
   const cloudWidth = activeImage ? activeImage.offsetWidth : 120;
 
-  // compute centered position ###changed here
-  const centerX = window.innerWidth - 20 - (cloudWidth / 2);
-  const leftPos = centerX - (cloudWidth / 2);
+  // Cloud's left edge ###changed here
+  const cloudLeft = window.innerWidth - 20 - cloudWidth;
+
+  // Offset downward from cloud top ###changed here
+  const verticalOffset = 40;  // adjust this value to change how low it starts
 
   Object.assign(div.style, {
-    top: "0px",
-    left: leftPos + "px",    /* centered under cloud ###changed here */
+    top: verticalOffset + "px",  /* starts slightly lower than cloud */
+    left: cloudLeft + "px",      /* aligned with cloud’s left edge */
     width: cloudWidth + "px",
     height: "100vh",
     backgroundImage: `url(${chrome.runtime.getURL("waterdrops.png")})`,
