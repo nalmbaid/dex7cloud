@@ -1,6 +1,5 @@
 /* ---------------------------------------------------
-   This function detects if the website you are on is a shopping site. 
-   This is sometimes triggered on non-shopping sites as well if you try to shop, just to remind you of what you are about to do as well
+   Detect shopping sites
 --------------------------------------------------- */
 function isShoppingSite() {
   const bodyText = document.body.innerText.toLowerCase();
@@ -32,21 +31,23 @@ function isShoppingSite() {
 
 
 /* ---------------------------------------------------
-   Cloud Guy Level Characters and Matching Speech Bubbles sets
+   Cloud images + speech bubbles
 --------------------------------------------------- */
 const baseImages = [
-   "e1.png", "e2.png", "e3.png", "e4.png",
-  "e5.png", "e6.png", "e7.png", "e8.png",
-  "e9.png", "e10.png","e11.png", "e12.png",
-   "e13.png", "e14.png","e15.png", "e16.png",
-   "e17.png", "e18.png","e19.png", "e20.png"
+  "e0.png",  /* ###changed here — added explicit e0 start */
+  "e1.png", "e2.png", "e3.png", "e4.png", "e5.png",
+  "e6.png", "e7.png", "e8.png", "e9.png", "e10.png",
+  "e11.png", "e12.png", "e13.png", "e14.png", "e15.png",
+  "e16.png", "e17.png", "e18.png", "e19.png", "e20.png"
 ];
+
 const tbImages = [
   "ems1_b.png", "ems2_b.png", "ems3_b.png", "ems4_b.png",
   "ems5_b.png", "ems6_b.png", "ems7_b.png", "ems8_b.png",
-  "ems9_b.png", "ems10_b.png","ems11_b.png", "ems12_b.png",
-   "ems13_b.png", "ems14_b.png","ems15_b.png", "ems16_b.png",
-   "ems17_b.png", "ems18_b.png","ems19_b.png", "ems20_b.png", "ems21_b.png"
+  "ems9_b.png", "ems10_b.png", "ems11_b.png", "ems12_b.png",
+  "ems13_b.png", "ems14_b.png", "ems15_b.png", "ems16_b.png",
+  "ems17_b.png", "ems18_b.png", "ems19_b.png", "ems20_b.png"
+  /* ems21 unused */
 ];
 
 let currentImageIndex = 0;
@@ -54,13 +55,14 @@ let activeImage = null;
 let activeBubble = null;
 
 
+
 /* ---------------------------------------------------
    Weather modes
 --------------------------------------------------- */
 const weatherMode = {
   0: "blank",
-  1: "blank",
-  2: "blank",
+  1: "waterdrop",
+  2: "waterdrop",
   3: "waterdrop",
   4: "waterdrop",
   5: "waterdrop",
@@ -84,7 +86,7 @@ const weatherMode = {
 
 
 /* ---------------------------------------------------
-   Show cloud guy image top right
+   Show cloud guy
 --------------------------------------------------- */
 function showEMS(filename) {
   if (!activeImage) {
@@ -103,7 +105,6 @@ function showEMS(filename) {
   }
 
   activeImage.src = chrome.runtime.getURL(filename);
-  
   requestAnimationFrame(() => activeImage.style.opacity = "1");
 }
 
@@ -113,6 +114,9 @@ function showEMS(filename) {
    Speech bubbles
 --------------------------------------------------- */
 function showBubble(index) {
+
+  if (index < 1) return;           /* ###changed here — prevent invalid bubble for e0 */
+
   const file = tbImages[index - 1];
   if (!file) return;
 
@@ -146,9 +150,9 @@ function showBubble(index) {
 
 
 /* ---------------------------------------------------
-   Weather effects container
+   Weather containers
 --------------------------------------------------- */
-let activeWeather = null; 
+let activeWeather = null;
 
 
 
@@ -157,17 +161,20 @@ let activeWeather = null;
 --------------------------------------------------- */
 const style = document.createElement("style");
 style.textContent = `
-/* Waterdrop – now scrolls down */
+
+/* Waterdrop now scrolls downward */
 @keyframes rainScroll {
   from { background-position-y: 0; }
   to   { background-position-y: 100%; }
 }
 
-/* Lightning flashing */
+/* Lightning flash with randomized intensity ###changed here */
 @keyframes lightningFlash {
   0%, 100% { opacity: 0; }
-  40% { opacity: 1; }
-  70% { opacity: .3; }
+  20% { opacity: var(--flash1, 0.8); }
+  40% { opacity: var(--flash2, 0.4); }
+  60% { opacity: var(--flash3, 1); }
+  80% { opacity: var(--flash4, 0.3); }
 }
 `;
 document.head.appendChild(style);
@@ -175,7 +182,7 @@ document.head.appendChild(style);
 
 
 /* ---------------------------------------------------
-   Weather Display Function
+   Weather display
 --------------------------------------------------- */
 function showWeather(mode, clickY = null, clickX = null) {
   if (activeWeather) activeWeather.remove();
@@ -183,7 +190,6 @@ function showWeather(mode, clickY = null, clickX = null) {
 
   const div = document.createElement("div");
 
-  // Shared base style
   Object.assign(div.style, {
     position: "fixed",
     pointerEvents: "none",
@@ -194,26 +200,36 @@ function showWeather(mode, clickY = null, clickX = null) {
 
 
   /* ----------------------------------------------
-     WATERDROP MODE — RIGHT SIDE, FALLING DOWN
+     WATERDROP — full height, right edge
+     width matches cloud guy ###changed here
   ---------------------------------------------- */
   if (mode === "waterdrop") {
+    const cloudWidth = activeImage ? activeImage.offsetWidth : 120;  /* ###changed here */
+
     Object.assign(div.style, {
       top: "0px",
-      left: "calc(100vw - 140px)",  // Right side
-      width: "120px",
+      right: "0px",     /* ###changed here — pinned to right edge */
+      left: "auto",
+      width: cloudWidth + "px",   /* ###changed here */
       height: "100vh",
       backgroundImage: `url(${chrome.runtime.getURL("waterdrops.png")})`,
       backgroundRepeat: "repeat",
-      backgroundSize: "120px auto",
+      backgroundSize: cloudWidth + "px auto",   /* ###changed here */
       animation: "rainScroll 5s linear infinite"
     });
   }
 
 
   /* ----------------------------------------------
-     LIGHTNING MODE — FLASH AT CLICK LOCATION
+     LIGHTNING — randomized flash ###changed here
   ---------------------------------------------- */
   if (mode === "lightning") {
+    /* Randomize flash brightness ###changed here */
+    div.style.setProperty("--flash1", Math.random());
+    div.style.setProperty("--flash2", Math.random());
+    div.style.setProperty("--flash3", Math.random());
+    div.style.setProperty("--flash4", Math.random());
+
     Object.assign(div.style, {
       top: clickY + "px",
       left: clickX + "px",
@@ -226,9 +242,9 @@ function showWeather(mode, clickY = null, clickX = null) {
     });
   }
 
-
   document.body.appendChild(div);
-  requestAnimationFrame(() => (div.style.opacity = "1"));
+  requestAnimationFrame(() => div.style.opacity = "1");
+
   activeWeather = div;
 
   setTimeout(() => {
@@ -240,18 +256,18 @@ function showWeather(mode, clickY = null, clickX = null) {
 
 
 /* ---------------------------------------------------
-   Load cloud guy when we reach a shopping website
+   Load starting cloud (always e0) ###changed here
 --------------------------------------------------- */
 if (isShoppingSite()) {
-  const saved = Number(localStorage.getItem("currentImageIndex"));
-  currentImageIndex = isNaN(saved) ? 0 : saved;
-  showEMS(baseImages[currentImageIndex]);
+  currentImageIndex = 0;   /* ###changed here */
+  localStorage.setItem("currentImageIndex", 0); /* ###changed here */
+  showEMS(baseImages[0]);
 }
 
 
 
 /* ---------------------------------------------------
-   Click Listener
+   Click listener
 --------------------------------------------------- */
 document.addEventListener("click", (e) => {
   if (!isShoppingSite()) return;
@@ -270,10 +286,11 @@ document.addEventListener("click", (e) => {
   const isDel = delWords.some(w => text.includes(w) || aria.includes(w) || cls.includes(w));
 
 
+  /* ADD */
   if (isAdd) {
     currentImageIndex = Math.min(currentImageIndex + 1, baseImages.length - 1);
     showEMS(baseImages[currentImageIndex]);
-    showBubble(currentImageIndex);
+    showBubble(currentImageIndex);  /* ###changed here: bubble matches Option A */
 
     const mode = weatherMode[currentImageIndex];
 
@@ -287,9 +304,11 @@ document.addEventListener("click", (e) => {
   }
 
 
+  /* REMOVE */
   if (isDel) {
     currentImageIndex = Math.max(currentImageIndex - 1, 0);
     showEMS(baseImages[currentImageIndex]);
+
     showWeather("blank");
     localStorage.setItem("currentImageIndex", currentImageIndex);
   }
