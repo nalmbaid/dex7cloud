@@ -55,7 +55,7 @@ let activeBubble = null;
 
 
 /* ---------------------------------------------------
-   Weather effects -- determine if there is an associated weather effect
+   Weather modes
 --------------------------------------------------- */
 const weatherMode = {
   0: "blank",
@@ -69,22 +69,22 @@ const weatherMode = {
   8: "waterdrop",
   9: "lightning",
   10: "lightning",
-   11: "lightning",
+  11: "lightning",
   12: "lightning",
   13: "lightning",
   14: "lightning",
   15: "lightning",
-   16: "lightning",
+  16: "lightning",
   17: "lightning",
   18: "lightning",
   19: "lightning",
-   20: "lightning"
+  20: "lightning"
 };
 
 
 
 /* ---------------------------------------------------
-   Show cloud guy emissions image top right, near the shopping cart
+   Show cloud guy image top right
 --------------------------------------------------- */
 function showEMS(filename) {
   if (!activeImage) {
@@ -110,7 +110,7 @@ function showEMS(filename) {
 
 
 /* ---------------------------------------------------
-   Show the speech bubbles for Cloud guy for 4 seconds 
+   Speech bubbles
 --------------------------------------------------- */
 function showBubble(index) {
   const file = tbImages[index - 1];
@@ -146,31 +146,28 @@ function showBubble(index) {
 
 
 /* ---------------------------------------------------
-   Weather Effects 
-   - water drops
-   - lightning
-   - blank = nothing
+   Weather effects container
 --------------------------------------------------- */
-
 let activeWeather = null; 
 
 
 
 /* ---------------------------------------------------
-   KEYFRAME ANIMATIONS
-       ChatGPT helped with setting this animation up - the base image for water rain is a continous pattern and a lightning drawing
+   Keyframes
 --------------------------------------------------- */
 const style = document.createElement("style");
 style.textContent = `
+/* Waterdrop – now scrolls down */
 @keyframes rainScroll {
   from { background-position-y: 0; }
-  to   { background-position-y: -100%; } /* ##added rain scrolls downward */
+  to   { background-position-y: 100%; }
 }
 
+/* Lightning flashing */
 @keyframes lightningFlash {
   0%, 100% { opacity: 0; }
-  30% { opacity: .9; }
-  60% { opacity: .2; }
+  40% { opacity: 1; }
+  70% { opacity: .3; }
 }
 `;
 document.head.appendChild(style);
@@ -178,24 +175,17 @@ document.head.appendChild(style);
 
 
 /* ---------------------------------------------------
-   WEATHER DISPLAY FUNCTION
+   Weather Display Function
 --------------------------------------------------- */
-function showWeather(mode, clickY = null, clickX = null) { /* ##added clickX */
+function showWeather(mode, clickY = null, clickX = null) {
   if (activeWeather) activeWeather.remove();
   if (mode === "blank") return;
 
   const div = document.createElement("div");
 
+  // Shared base style
   Object.assign(div.style, {
     position: "fixed",
-
-    /* ##added: rain = full LENGTH only (height 100vh), not full width */
-    top: mode === "lightning" ? clickY + "px" : "0px",   /* ##added rain top */
-    left: mode === "lightning" ? clickX + "px" : "20px", /* ##added lightning x-pos; rain stays at right */
-
-    width: mode === "lightning" ? "80px" : "120px",   /* ##added lightning smaller */
-    height: mode === "lightning" ? "120px" : "100vh", /* ##added rain full LENGHT */
-
     pointerEvents: "none",
     opacity: "0",
     transition: "opacity .4s",
@@ -203,38 +193,42 @@ function showWeather(mode, clickY = null, clickX = null) { /* ##added clickX */
   });
 
 
-
-  /* ---------------------------------------------------
-     WATERDROP MODE
-     - Repeating texture, animates smoothly down
-  --------------------------------------------------- */
+  /* ----------------------------------------------
+     WATERDROP MODE — RIGHT SIDE, FALLING DOWN
+  ---------------------------------------------- */
   if (mode === "waterdrop") {
-    div.style.backgroundImage = `url(${chrome.runtime.getURL("waterdrops.png")})`;
-    div.style.backgroundRepeat = "repeat";
-    div.style.backgroundSize = "120px auto";
-    div.style.animation = "rainScroll 5s linear infinite";
+    Object.assign(div.style, {
+      top: "0px",
+      left: "calc(100vw - 140px)",  // Right side
+      width: "120px",
+      height: "100vh",
+      backgroundImage: `url(${chrome.runtime.getURL("waterdrops.png")})`,
+      backgroundRepeat: "repeat",
+      backgroundSize: "120px auto",
+      animation: "rainScroll 5s linear infinite"
+    });
   }
 
 
-
-  /* ---------------------------------------------------
-     LIGHTNING MODE
-     - Appears where user clicks (x,y)
-     - Smaller box
-     - Flashes using keyframes
-  --------------------------------------------------- */
+  /* ----------------------------------------------
+     LIGHTNING MODE — FLASH AT CLICK LOCATION
+  ---------------------------------------------- */
   if (mode === "lightning") {
-    div.style.backgroundImage = `url(${chrome.runtime.getURL("lightning.png")})`;
-    div.style.backgroundSize = "contain"; /* ##added lightning fits smaller */
-    div.style.backgroundRepeat = "no-repeat"; /* ##added */
-    div.style.animation = "lightningFlash 1s ease-in-out infinite";
+    Object.assign(div.style, {
+      top: clickY + "px",
+      left: clickX + "px",
+      width: "80px",
+      height: "120px",
+      backgroundImage: `url(${chrome.runtime.getURL("lightning.png")})`,
+      backgroundRepeat: "no-repeat",
+      backgroundSize: "contain",
+      animation: "lightningFlash 1s ease-in-out infinite"
+    });
   }
-
 
 
   document.body.appendChild(div);
   requestAnimationFrame(() => (div.style.opacity = "1"));
-
   activeWeather = div;
 
   setTimeout(() => {
@@ -246,7 +240,7 @@ function showWeather(mode, clickY = null, clickX = null) { /* ##added clickX */
 
 
 /* ---------------------------------------------------
-   Load cloudguy when we reach a shopping website
+   Load cloud guy when we reach a shopping website
 --------------------------------------------------- */
 if (isShoppingSite()) {
   const saved = Number(localStorage.getItem("currentImageIndex"));
@@ -257,7 +251,7 @@ if (isShoppingSite()) {
 
 
 /* ---------------------------------------------------
-   CLICK LISTENER (Add / Remove)
+   Click Listener
 --------------------------------------------------- */
 document.addEventListener("click", (e) => {
   if (!isShoppingSite()) return;
@@ -276,7 +270,6 @@ document.addEventListener("click", (e) => {
   const isDel = delWords.some(w => text.includes(w) || aria.includes(w) || cls.includes(w));
 
 
-  /* ADD button increases the level of cloud guy up + bubble + weather effect */
   if (isAdd) {
     currentImageIndex = Math.min(currentImageIndex + 1, baseImages.length - 1);
     showEMS(baseImages[currentImageIndex]);
@@ -285,7 +278,7 @@ document.addEventListener("click", (e) => {
     const mode = weatherMode[currentImageIndex];
 
     if (mode === "lightning") {
-      showWeather(mode, e.clientY, e.clientX); /* ##added X and Y position */
+      showWeather(mode, e.clientY, e.clientX);
     } else {
       showWeather(mode);
     }
@@ -294,13 +287,10 @@ document.addEventListener("click", (e) => {
   }
 
 
-  /* REMOVE → EMS level down */
   if (isDel) {
     currentImageIndex = Math.max(currentImageIndex - 1, 0);
     showEMS(baseImages[currentImageIndex]);
-
-    showWeather("blank"); // ##added no weather on remove
-
+    showWeather("blank");
     localStorage.setItem("currentImageIndex", currentImageIndex);
   }
 });
