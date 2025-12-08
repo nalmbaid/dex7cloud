@@ -200,24 +200,26 @@ function showWeather(mode, clickY = null, clickX = null) {
 
 
   /* ----------------------------------------------
-     WATERDROP — full height, right edge
-     width matches cloud guy ###changed here
-  ---------------------------------------------- */
-  if (mode === "waterdrop") {
-    const cloudWidth = activeImage ? activeImage.offsetWidth : 120;  /* ###changed here */
+   WATERDROP — centered under cloud guy ###changed here
+---------------------------------------------- */
+if (mode === "waterdrop") {
+  const cloudWidth = activeImage ? activeImage.offsetWidth : 120;
 
-    Object.assign(div.style, {
-      top: "0px",
-      right: "0px",     /* ###changed here — pinned to right edge */
-      left: "auto",
-      width: cloudWidth + "px",   /* ###changed here */
-      height: "100vh",
-      backgroundImage: `url(${chrome.runtime.getURL("waterdrops.png")})`,
-      backgroundRepeat: "repeat",
-      backgroundSize: cloudWidth + "px auto",   /* ###changed here */
-      animation: "rainScroll 5s linear infinite"
-    });
-  }
+  // compute centered position ###changed here
+  const centerX = window.innerWidth - 20 - (cloudWidth / 2);
+  const leftPos = centerX - (cloudWidth / 2);
+
+  Object.assign(div.style, {
+    top: "0px",
+    left: leftPos + "px",    /* centered under cloud ###changed here */
+    width: cloudWidth + "px",
+    height: "100vh",
+    backgroundImage: `url(${chrome.runtime.getURL("waterdrops.png")})`,
+    backgroundRepeat: "repeat",
+    backgroundSize: cloudWidth + "px auto",
+    animation: "rainScroll 5s linear infinite"
+  });
+}
 
 
   /* ----------------------------------------------
@@ -259,12 +261,13 @@ function showWeather(mode, clickY = null, clickX = null) {
    Load starting cloud (always e0) ###changed here
 --------------------------------------------------- */
 if (isShoppingSite()) {
-  currentImageIndex = 0;   /* ###changed here */
-  localStorage.setItem("currentImageIndex", 0); /* ###changed here */
-  showEMS(baseImages[0]);
+  const saved = Number(localStorage.getItem("currentImageIndex"));
+
+  // if saved not valid, start at 0, else use saved ###changed here
+  currentImageIndex = isNaN(saved) ? 0 : saved;
+
+  showEMS(baseImages[currentImageIndex]);
 }
-
-
 
 /* ---------------------------------------------------
    Click listener
